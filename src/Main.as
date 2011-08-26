@@ -4,16 +4,22 @@ package
 	import flash.text.engine.*;
 	
 	import org.tinytlf.layout.*;
-	import org.tinytlf.layout.block.*;
-	import org.tinytlf.layout.block.alignment.*;
-	import org.tinytlf.layout.block.constraints.*;
-	import org.tinytlf.layout.block.progression.*;
+	import org.tinytlf.layout.alignment.*;
+	import org.tinytlf.layout.constraints.*;
+	import org.tinytlf.layout.progression.*;
 	import org.tinytlf.layout.properties.*;
-	import org.tinytlf.util.fte.*;
+	import org.tinytlf.util.*;
 	
 	[SWF(width="500", height="500")]
 	public class Main extends Sprite
 	{
+		[Embed(source="assets/Sansation_Light.ttf", fontFamily="Sansation")]
+		private var sansation:Class;
+		[Embed(source="assets/Interstate Regular.ttf", fontFamily="Interstate")]
+		private var interstate:Class;
+		[Embed(source="assets/helvetica regular.ttf", fontFamily="Helvetica")]
+		private var helvetica:Class;
+		
 		private const child:Sprite = new Sprite();
 		
 		public function Main()
@@ -25,103 +31,113 @@ package
 			g.endFill();
 			child.y = 50;
 			
-			var element:GroupElement = new GroupElement(
-				new <ContentElement>[createFloat(TextFloat.LEFT, 0x00FF00),
-									 createFloat(TextFloat.LEFT, 0x00FF00),
-									 createFloat(TextFloat.RIGHT, 0x0000FF),
-									 createFloat(TextFloat.LEFT, 0x00FF00),
-									 createFloat(TextFloat.LEFT, 0x00FF00),
-									 
-									 createFloat(TextFloat.RIGHT, 0x0000FF),
-									 createFloat(TextFloat.RIGHT, 0x0000FF),
-									 createFloat(TextFloat.LEFT, 0x00FF00),
-									 createFloat(TextFloat.RIGHT, 0x0000FF),
-									 createFloat(TextFloat.RIGHT, 0x0000FF),
-									 
-									 createFloat(TextFloat.RIGHT, 0x0000FF),
-									 createFloat(TextFloat.LEFT, 0x00FF00),
-									 
-									 new TextElement('ENIAC (pronounced /ˈɛni.æk/), short for Electronic ' +
-													 'Numerical Integrator And Computer,[1][2] was the first ' +
-													 'general-purpose electronic computer. It was a Turing-complete, ' +
-													 'digital computer capable of being reprogrammed to solve a full ' +
-													 'range of computing problems.[3]',
-													 new ElementFormat(null, 22)),
-				], new ElementFormat());
+			const fd:FontDescription = new FontDescription("Helvetica");
+			fd.fontLookup = FontLookup.EMBEDDED_CFF;
+			const ef:ElementFormat = new ElementFormat(fd, 16);
 			
-			var block:TextBlock = new TextBlock(element);
+			const element:GroupElement = new GroupElement(
+				new <ContentElement>[
+//				createFloat(TextFloat.LEFT, 0xCCCCCC),
+//				createFloat(TextFloat.LEFT, 0x00FF00),
+//				createFloat(TextFloat.RIGHT, 0x999999),
+//				createFloat(TextFloat.LEFT, 0x00FF00),
+//				createFloat(TextFloat.LEFT, 0x00FF00),
+//				
+//				createFloat(TextFloat.RIGHT, 0x0000FF),
+//				createFloat(TextFloat.RIGHT, 0x0000FF),
+//				createFloat(TextFloat.LEFT, 0x00FF00),
+//				createFloat(TextFloat.RIGHT, 0x0000FF),
+//				createFloat(TextFloat.RIGHT, 0x0000FF),
+//				
+//				createFloat(TextFloat.RIGHT, 0x0000FF),
+//				createFloat(TextFloat.LEFT, 0x00FF00),
+				
+				new TextElement('ENIAC (pronounced /ˈɛni.æk/), short for Electronic ' +
+								'Numerical Integrator And Computer, was the first ' +
+								'general-purpose electronic computer. It was a Turing-complete, ' +
+								'digital computer capable of being reprogrammed to solve a full ' +
+								'range of computing problems.', ef.clone())],
+				new ElementFormat());
+			
+			const block:TextBlock = new TextBlock(element);
 			block.textJustifier = new SpaceJustifier('en', LineJustification.ALL_BUT_LAST);
-			block.userData = new LayoutProperties({width: 500, textIndent: 20});
+			const layout:LayoutProperties = new LayoutProperties({width: 500});
 			
-			var lineRenderer:IBlockRenderer = new StandardBlockRenderer();
-			var lineLayout:IBlockLayout = new StandardBlockLayout();
-			var detector:IConstraintDetector = new ConstraintDetector();
-			var constraintLayout:IConstraintLayout = new ConstraintLayout();
-			var lineConstraintRenderer:IBlockRenderer = new BlockConstraintRenderer();
-			var lineConstraintLayout:IBlockLayout = new BlockConstraintLayout();
+			// Testing
+//			block.createTextLine(block.createTextLine(null, 100), 100);
+//			trace(block.firstLine);
+//			trace(block.firstInvalidLine);
+//			trace(block.lastLine);
+//			trace(block.textLineCreationResult);
+//			return;
+			
+			const lineRenderer:IBlockRenderer = new StandardBlockRenderer();
+			const lineLayout:IBlockLayout = new StandardBlockLayout();
+			const detector:IConstraintDetector = new ConstraintDetector();
+			const constraintLayout:IConstraintLayout = new ConstraintLayout();
+//			const lineConstraintRenderer:IBlockRenderer = new BlockConstraintRenderer();
+//			const lineConstraintLayout:IBlockLayout = new BlockConstraintLayout();
 			
 			lineRenderer.progression =
 				lineLayout.progression =
-				lineConstraintRenderer.progression =
-				lineConstraintLayout.progression = new TTBProgression();
+				constraintLayout.progression =
+//				lineConstraintRenderer.progression =
+//				lineConstraintLayout.progression = 
+				new TTBProgression();
 			
-			var alignment:IBlockAlignment = new LeftAlignment();
+			constraintLayout.alignment = new ConstraintAligner();
+			
+			const alignment:IBlockAligner = new LeftAligner();
 			
 			lineRenderer.alignment =
 				lineLayout.alignment =
-				lineConstraintRenderer.alignment =
-				lineConstraintLayout.alignment = alignment;
+//				lineConstraintRenderer.alignment =
+//				lineConstraintLayout.alignment = 
+				new LeftAligner();
 			
-			var lines:Vector.<TextLine>;
-			var constraints:Vector.<IConstraint>;
+			var lines:Array;
+			var constraints:Array;
 			
 			// 1. Break all the lines normally.
-			lines = lineRenderer.render(block);
+			lines = lineRenderer.render(block, layout);
 			
 			// 2. Layout all the lines normally.
-			lines = lineLayout.layout(lines.concat());
+			lines = lineLayout.layout(lines.concat(), layout);
 			
 			// 3. Detect the constraints.
 			constraints = detector.detectConstraints(lines.concat());
 			
-			// 4. Layout the constraints first.
-			constraints = constraintLayout.layoutConstraints(block, constraints.concat());
+			// 4. Layout the constraints first. They should return in sorted order.
+			constraints = constraintLayout.layout(block, constraints.concat(), layout);
 			
-			// 5. Sort the constraints by alignment.
-			constraints = alignment.sortConstraints(constraints.concat());
+			const constraintLines:Array = [];
 			
-			var constraintLines:Vector.<TextLine> = new <TextLine>[];
-			
-			// 6. Filter out TextLines that the constraints are in.
+			// 5. Filter out TextLines that hold constraints or control characters.
 			lines = lines.filter(function(line:TextLine, ... args):Boolean{
-				return !constraints.some(function(constraint:IConstraint, ... args):Boolean{
+				
+				const isConstraintLine:Boolean = constraints.some(function(constraint:IConstraint, ... args):Boolean{
 					if(constraint.textLine == line)
-					{
 						constraintLines.push(line);
-						return true;
-					}
-					
-					return false;
+					return constraint.textLine == line;
 				});
+				
+				const isControlLine:Boolean = (line.getAtomGraphic(0) is Shape && line.atomCount <= 2);
+				
+				return !(isConstraintLine || isControlLine);
 			});
 			
-			// 7. Filter out control lines.
-			lines = lines.filter(function(line:TextLine, ... args):Boolean{
-				return !(line.getAtomGraphic(0) is Shape && line.atomCount <= 2);
-			});
+			// 6. Break the lines around the constraints.
+//			lines = lineConstraintRenderer.render(block, layout, lines.concat(), constraints.concat());
 			
-			// 8. Break the lines around the constraints.
-			lines = lineConstraintRenderer.render(block, lines.concat(), constraints.concat());
+			// 7. Filter out control lines again.
+//			lines = lines.filter(function(line:TextLine, ... args):Boolean{
+//				return !(line.getAtomGraphic(0) is Shape && line.atomCount <= 2);
+//			});
 			
-			// 9. Filter out control lines again.
-			lines = lines.filter(function(line:TextLine, ... args):Boolean{
-				return !(line.getAtomGraphic(0) is Shape && line.atomCount <= 2);
-			});
+			// 8. Layout the newly broken lines around the laid out constraints.
+//			lines = lineConstraintLayout.layout(lines.concat(), constraints.concat());
 			
-			// 10. Layout the newly broken lines around the laid out constraints.
-			lines = lineConstraintLayout.layout(lines.concat(), constraints.concat());
-			
-			// 11. Add the lines to the display list
+			// 9. Add the lines to the display list.
 			var i:int = 0, n:int = 0;
 			
 			for(i = 0, n = constraintLines.length; i < n; ++i)
